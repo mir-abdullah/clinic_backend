@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+
+//patient model
+
+model Patient{
+  id        String      @id @default(uuid())
+  name      String
+  age       Int
+  phone     String
+  address   String
+  gender    String
+  guardian   String
+  occupation String
+  medicalHistory String
+
+  createdAt DateTime @default(now())
+  appointments Appointment[]
+  visits       Visit[]
+}
+
+
+//appointment model
+
+model Appointment{
+  id          String      @id @default(uuid())
+  patientId   String?
+  patient     Patient?    @relation(fields: [patientId], references: [id])
+  walkinName String?
+  walkinPhone String?
+  status      AppointmentStatus @default(SCHEDULED)
+
+  doctorName  String?
+  date        DateTime
+  time        String
+  reason      String?
+
+  createdAt   DateTime @default(now())
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+
+//visit model
+
+model Visit{
+  id          String      @id @default(uuid())
+  patientId   String?
+  patient     Patient?    @relation(fields: [patientId], references: [id])
+  doctorName  String?
+  date        DateTime
+  time        String
+  reason      String?
+  diagnosis   String?
+  prescription String?
+
+  createdAt   DateTime @default(now())
+}
