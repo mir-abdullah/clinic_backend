@@ -75,26 +75,74 @@ export const getAllPatients = async (req, res) => {
 
 //add a patient
 
-export const addPatient= async(req,res)=>{
-    try{
-        const {name,age,gender,phone,address,guardian,occupation,medicalHistory}= req.body;
-        const patient = await prisma.patient.create({
-            data: {
-                name,
-                age,
-                gender,
-                phone,
-                address,
-                guardian,
-                occupation,
-                medicalHistory
-            }
-        });
-        res.json(patient);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+export const addPatient = async (req, res) => {
+  try {
+    const {
+      name,
+      age,
+      gender,
+      phone,
+      address,
+      guardian,
+      occupation,
+      medicalHistory
+    } = req.body;
+
+    console.log("req",req.body)
+
+    // =======================
+    // VALIDATION
+    // =======================
+
+    if (!name || !phone || !gender) {
+      return res.status(400).json({
+        error: "Name, phone and gender are required"
+      });
     }
-}
+
+    // =======================
+    // // CHECK EXISTING PATIENT
+    // // =======================
+
+    //     const existingPatient = await prisma.patient.findFirst({
+    //         where: {
+    //             phone: phone
+    //         }
+    //     });
+
+    // if (existingPatient) {
+    //   return res.status(409).json({
+    //     error: "Patient with this phone already exists"
+    //   });
+    // }
+
+    // =======================
+    // CREATE PATIENT
+    // =======================
+
+    const patient = await prisma.patient.create({
+      data: {
+        name: name.trim(),
+        age: age ? Number(age) : null,
+        gender,
+        phone: phone.trim(),
+        address: address?.trim(),
+        guardian: guardian?.trim(),
+        occupation: occupation?.trim(),
+        medicalHistory: medicalHistory?.trim()
+      }
+    });
+
+    return res.status(201).json(patient);
+
+  } catch (error) {
+    console.error("Add Patient Error:", error);
+
+    return res.status(500).json({
+      error: "Failed to create patient"
+    });
+  }
+};
 
 
 //get a patient by id
@@ -103,9 +151,7 @@ export const getPatientById= async(req,res)=>{
     try {
         const {id} = req.params;
         const patient = await prisma.patient.findUnique({
-            where: {
-                id: parseInt(id,10)
-            }
+            where: { id }
         });
         if(!patient){
             return res.status(404).json({error:"Patient not found"});
@@ -123,9 +169,7 @@ export const updatePatient= async(req,res)=>{
         const {id} = req.params;
         const {name,age,gender,phone,address,guardian,occupation,medicalHistory}= req.body;
         const patient = await prisma.patient.update({
-            where: {
-                id: parseInt(id,10)
-            },
+            where: { id },
             data: {
                 name,
                 age,
@@ -149,9 +193,7 @@ export const deletePatient= async(req,res)=>{
     try{
         const {id} = req.params;
         await prisma.patient.delete({
-            where: {
-                id: parseInt(id,10)
-            }
+            where: { id }
         });
         res.json({message:"Patient deleted successfully"});
     }

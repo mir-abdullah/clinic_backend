@@ -1,7 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+// =======================
+// DATABASE
+// =======================
 
 generator client {
   provider = "prisma-client-js"
@@ -11,63 +10,138 @@ datasource db {
   provider = "sqlite"
 }
 
+// =======================
+// PATIENT
+// =======================
 
-//patient model
+model Patient {
+  id              String   @id @default(uuid())
 
-model Patient{
-  id        String      @id @default(uuid())
-  name      String
-  age       Int
-  phone     String
-  address   String
-  gender    String
-  guardian   String
-  occupation String
-  medicalHistory String
+  name            String
+  age             Int?
+  phone           String   @unique
+  address         String?
+  gender          String
 
-  createdAt DateTime @default(now())
-  appointments Appointment[]
-  visits       Visit[]
+  guardian        String?
+  occupation      String?
+  medicalHistory  String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt @default(now())
+
+  // Relations
+  appointments    Appointment[]
+  visits          Visit[]
+
+  @@index([phone])
 }
 
+// =======================
+// APPOINTMENT
+// =======================
 
-//appointment model
+model Appointment {
+  id            String   @id @default(uuid())
 
-model Appointment{
-  id          String      @id @default(uuid())
-  patientId   String?
-  patient     Patient?    @relation(fields: [patientId], references: [id])
-  walkinName String?
-  walkinPhone String?
-  status      AppointmentStatus @default(SCHEDULED)
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id])
 
-  doctorName  String?
-  date        DateTime
-  time        String
-  reason      String?
+  status        AppointmentStatus @default(SCHEDULED)
 
-  createdAt   DateTime @default(now())
+  doctorName    String?
+
+  date          DateTime
+  time          String
+
+  reason        String?
+  notes         String?
+
+  // reminderSent  Boolean @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+
+  @@index([date])
 }
 
 enum AppointmentStatus {
   SCHEDULED
   COMPLETED
   CANCELLED
+  NO_SHOW
 }
 
+// =======================
+// VISIT
+// =======================
 
-//visit model
+model Visit {
+  id             String   @id @default(uuid())
 
-model Visit{
-  id          String      @id @default(uuid())
-  patientId   String?
-  patient     Patient?    @relation(fields: [patientId], references: [id])
-  doctorName  String?
-  date        DateTime
-  time        String
-  reason      String?
-  diagnosis   String?
-  prescription String?
+  patientId      String
+  patient        Patient  @relation(fields: [patientId], references: [id])
 
-  createdAt   DateTime @default(now())
+  doctorName     String?
+
+  date           DateTime
+  time           String
+
+  reason         String?
+
+  diagnosis      String?
+  prescription   String?
+  notes          String?
+
+  // =======================
+  // BILLING SUMMARY
+  // =======================
+
+  totalAmount    Float @default(0)
+  paidAmount     Float @default(0)
+  dueAmount      Float @default(0)
+
+  paymentStatus  PaymentStatus @default(UNPAID)
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt @default(now())
+
+  // Relations
+  payments       Payment[]
+
+  @@index([date])
+  @@index([patientId])
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+// =======================
+// PAYMENT
+// =======================
+
+model Payment {
+  id            String   @id @default(uuid())
+
+  visitId       String
+  visit         Visit    @relation(fields: [visitId], references: [id])
+
+  amount        Float
+
+  method        PaymentMethod
+
+  notes         String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt @default(now())
+  @@index([visitId])
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  ONLINE
 }
