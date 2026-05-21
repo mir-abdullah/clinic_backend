@@ -3,7 +3,7 @@ import prisma from "../../db.js";
 //add a payment
 export const addPayment = async (req, res) => {
   try {
-    const { visitId, amount, method, date, notes } = req.body;
+    const { visitId, amount, method,  notes } = req.body;
 
     if (visitId) {
       const visit = await prisma.visit.findUnique({
@@ -13,17 +13,46 @@ export const addPayment = async (req, res) => {
       if (!visit) {
         return res.status(404).json({ error: "Visit not found." });
       }
+      const totalPaid = await prisma.payment.aggregate({
+        where: { visitId: visitId },
+        _sum: { amount: true },
+      });
+
+      const newTotalPaid = (totalPaid._sum.amount || 0) + amount;
+      if (newTotalPaid > visit.totalAmount) {
+        return res.status(400).json({ error: "Payment exceeds total amount due." });
+      }
+
       const newPayment = {
         visitId,
         amount,
         method,
-        date: new Date(date),
         notes
       };
 
       const payment = await prisma.payment.create({
         data: newPayment,
       });
+      //await payment status
+      let status = "UNPAID";
+      if(visit.dueAmount === 0){
+        status = "PAID";
+      }
+      else if(visit.dueAmount > 0 && visit.paidAmount > 0){
+        status = "PARTIAL";
+      }
+      else if(visit.dueAmount > 0){
+        status = "UNPAID";
+      }
+      await prisma.visit.update({
+        where: { id: visitId },
+        data: {
+          paidAmount: visit.paidAmount + amount,
+          dueAmount: visit.totalAmount - newTotalPaid,
+          paymentStatus: status
+        }
+      });
+    
       return res.status(201).json(payment);
     } else {
       return res.status(400).json({ error: "Visit ID is required." });

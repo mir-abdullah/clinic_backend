@@ -61,7 +61,7 @@ export const getVisitById = async (req, res) => {
     const { id } = req.params;
     const visit = await prisma.visit.findUnique({
       where: {
-        id: parseInt(id, 10),
+        id: id
       },
     });
     if (!visit) {
@@ -80,7 +80,7 @@ export const updateVisit = async (req, res) => {
     const { doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,dueAmount   } = req.body;
     const visit = await prisma.visit.update({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
       data: {
         doctorName,
@@ -107,7 +107,7 @@ export const deleteVisit = async (req, res) => {
     const { id } = req.params;
     await prisma.visit.delete({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
     });
     res.json({ message: "Visit deleted successfully" });
@@ -151,7 +151,7 @@ export const getVisitsByPatientId = async (req, res) => {
         const { patientId } = req.params;
         const visit = await prisma.visit.findMany({
             where: {
-                patientId: parseInt(patientId, 10),
+                patientId: patientId,
              },
              orderBy: { date: "desc", time: "desc" },
              include: {

@@ -158,7 +158,7 @@ export const getAppointmentsByPatientId = async(req,res)=>{
             where: {
                 patientId: patientId
              },
-             orderBy: { date: "desc", time: "desc" },
+             orderBy: { date: "desc"},
              include: {
                 patient: true
              }

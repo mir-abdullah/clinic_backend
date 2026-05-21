@@ -19,7 +19,7 @@ model Patient {
 
   name            String
   age             Int?
-  phone           String   @unique
+  phone           String   
   address         String?
   gender          String
 
@@ -136,7 +136,7 @@ model Payment {
   notes         String?
 
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt @default(now())
+  updatedAt     DateTime @updatedAt
   @@index([visitId])
 }
 

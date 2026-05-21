@@ -1,65 +1,41 @@
 import prisma from "../../db.js";
 
 
-//get all patients
+// Get all patients
 export const getAllPatients = async (req, res) => {
     try {
         const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
         const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+        
+
         const search = String(req.query.search ?? "")
             .trim()
             .replace(/^['"]+|['"]+$/g, "");
+
         const skip = (page - 1) * limit;
 
-        let totalPatients;
-        let patients;
+        // Base where condition
+        const where = search
+            ? {
+                  name: {
+                      contains: search,
+                  },
+              }
+            : {};
 
-        if (search) {
-            const where = {
-                name: {
-                    contains: search,
+        const [totalPatients, patients] = await Promise.all([
+            prisma.patient.count({ where }),
+            prisma.patient.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: {
+                    createdAt: "desc",
                 },
-            };
+            }),
+        ]);
 
-            const [count, list] = await Promise.all([
-                prisma.patient.count({ where }),
-                prisma.patient.findMany({
-                    where,
-                    skip,
-                    take: limit,
-                    orderBy: { createdAt: "desc" },
-                }),
-            ]);
-
-            totalPatients = count;
-            patients = list;
-        } else {
-            const [count, list] = await Promise.all([
-                prisma.patient.count(),
-                prisma.patient.findMany({
-                    skip,
-                    take: limit,
-                    orderBy: { createdAt: "desc" },
-                }),
-            ]);
-
-            totalPatients = count;
-            patients = list;
-        }
-
-        if (totalPatients === 0) {
-            return res.json({
-                patients: [],
-                pagination: {
-                    totalPatients: 0,
-                    page,
-                    limit,
-                    totalPages: 0,
-                },
-            });
-        }
-
-        res.json({
+        return res.status(200).json({
             patients,
             pagination: {
                 totalPatients,
@@ -69,12 +45,16 @@ export const getAllPatients = async (req, res) => {
             },
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error(error);
+
+        return res.status(500).json({
+            message: "Failed to fetch patients",
+            error: error.message,
+        });
     }
 };
 
 //add a patient
-
 export const addPatient = async (req, res) => {
   try {
     const {
@@ -88,7 +68,7 @@ export const addPatient = async (req, res) => {
       medicalHistory
     } = req.body;
 
-    console.log("req",req.body)
+
 
     // =======================
     // VALIDATION
@@ -99,22 +79,6 @@ export const addPatient = async (req, res) => {
         error: "Name, phone and gender are required"
       });
     }
-
-    // =======================
-    // // CHECK EXISTING PATIENT
-    // // =======================
-
-    //     const existingPatient = await prisma.patient.findFirst({
-    //         where: {
-    //             phone: phone
-    //         }
-    //     });
-
-    // if (existingPatient) {
-    //   return res.status(409).json({
-    //     error: "Patient with this phone already exists"
-    //   });
-    // }
 
     // =======================
     // CREATE PATIENT
@@ -146,7 +110,6 @@ export const addPatient = async (req, res) => {
 
 
 //get a patient by id
-
 export const getPatientById= async(req,res)=>{
     try {
         const {id} = req.params;
@@ -163,7 +126,6 @@ export const getPatientById= async(req,res)=>{
 }
 
 //update a patient
-
 export const updatePatient= async(req,res)=>{
     try{
         const {id} = req.params;
@@ -188,7 +150,6 @@ export const updatePatient= async(req,res)=>{
 }
 
 //delete a patient
-
 export const deletePatient= async(req,res)=>{
     try{
         const {id} = req.params;

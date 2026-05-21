@@ -4,7 +4,7 @@ import { getAllPatients ,addPatient,getPatientById,updatePatient,deletePatient, 
 const router = express.Router();
 
 //get all patients
-router.get("/",getAllPatients);
+router.get("/all",getAllPatients);
 
 //add a patient
 router.post("/add",addPatient)
