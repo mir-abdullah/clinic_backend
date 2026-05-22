@@ -71,7 +71,7 @@ export const getPaymentById = async (req, res) => {
     const { id } = req.params;
     const payment = await prisma.payment.findUnique({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
     });
     if (!payment) {
@@ -90,7 +90,7 @@ export const updatePayment = async (req, res) => {
     const { amount, method, date, notes } = req.body;
     const payment = await prisma.payment.update({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
       data: {
         amount,
@@ -112,7 +112,7 @@ export const deletePayment = async (req, res) => {
     const { id } = req.params;
     await prisma.payment.delete({
       where: {
-        id: parseInt(id, 10),
+        id: id,
       },
     });
     res.json({ message: "Payment deleted successfully" });
@@ -128,10 +128,10 @@ export const getPaymentsByVisitId = async (req, res) => {
     const { visitId } = req.params;
     const payments = await prisma.payment.findMany({
       where: {
-        visitId: parseInt(visitId, 10),
+        visitId: visitId,
       },
     });
-    res.json(payments);
+    res.json({payments ,count : payments.length});
   } catch (error) {
     console.error("Error fetching payments:", error);
     res.status(500).json({ error: "An error occurred while fetching payments." });
@@ -144,7 +144,7 @@ export const getPaymentDuesByPatientId = async (req, res) => {
     const { patientId } = req.params;
     const visits = await prisma.visit.findMany({
       where: {
-        patientId: parseInt(patientId, 10),
+        patientId: patientId,
       },
       include: {
         payments: true,
