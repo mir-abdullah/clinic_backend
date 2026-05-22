@@ -149,7 +149,7 @@ export const getVisitStats = async (req, res) => {
 export const getVisitsByPatientId = async (req, res) => {
     try {
         const { patientId } = req.params;
-        const visit = await prisma.visit.findMany({
+    const visits = await prisma.visit.findMany({
             where: {
                 patientId: patientId,
              },
@@ -158,11 +158,27 @@ export const getVisitsByPatientId = async (req, res) => {
                 payments: true
              }
          });
-        }
-        catch (error) {  res.status(500).json({ error: error.message });
-            return; 
+    return res.json(visits);
+  } catch (error) {  res.status(500).json({ error: error.message });
+    return; 
     }
-    return res.json(visit);
+}
+
+//get recent 5 visits
+export const getRecentVisits = async (req, res) => {
+    try {
+    const visits = await prisma.visit.findMany({
+            orderBy: { createdAt: "desc" },
+            take: 5,
+            include: {
+                patient: true
+            }
+    });
+
+    return res.json(visits);
+  } catch (error) {  res.status(500).json({ error: error.message });
+    return;
+  }
 }
 
 
