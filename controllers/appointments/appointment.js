@@ -171,4 +171,3 @@ export const getAppointmentsByPatientId = async(req,res)=>{
         res.status(500).json({ error: "An error occurred while fetching appointments for the patient." });
     }
 }
-

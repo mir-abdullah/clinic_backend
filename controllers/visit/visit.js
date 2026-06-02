@@ -182,5 +182,31 @@ export const getRecentVisits = async (req, res) => {
 }
 
 
+//get monthly revenue
+export const getMonthlyRevenueStats = async (req, res) => {
+    try {
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth() + 1; // Months are zero-based
+        const currentYear = currentDate.getFullYear();
+        
+        const visits = await prisma.visit.findMany({
+            where: {
+                date: {
+                    gte: new Date(currentYear, currentMonth - 1, 1),
+                    lt: new Date(currentYear, currentMonth, 1),
+                },
+            },
+        });
+        const totalRevenue = visits.reduce((sum, visit) => sum + visit.totalAmount, 0);
+        const pendingRevenue = visits.reduce((sum, visit) => sum + visit.dueAmount, 0);
+        
+        res.json({ totalRevenue, pendingRevenue });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+
+  }
+
+
     
 

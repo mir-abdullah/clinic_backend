@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllVisits, getVisitsByPatientId, addVisit, getVisitById, updateVisit, deleteVisit, getVisitStats,getRecentVisits } from "../../controllers/visit/visit.js";
+import { getAllVisits, getVisitsByPatientId, addVisit, getVisitById, updateVisit, deleteVisit, getVisitStats,getRecentVisits, getMonthlyRevenueStats } from "../../controllers/visit/visit.js";
 
 const router =express.Router();
 
@@ -26,6 +26,9 @@ router.put("/:id",updateVisit)
 
 //delete a visit
 router.delete("/:id",deleteVisit)
+
+//monthly revenue 
+router.get("/monthly/revenue",getMonthlyRevenueStats)
 
 
 
