@@ -6,6 +6,9 @@ export const getAllAppointments = async (req, res) => {
     try {
         const appointments = await prisma.appointment.findMany({
             orderBy: { createdAt: "desc" },
+            include: {patient: true
+            }
+
         });
         res.json(appointments);
     } catch (error) {

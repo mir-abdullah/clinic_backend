@@ -20,6 +20,7 @@ export const getAllPatients = async (req, res) => {
                   name: {
                       contains: search,
                   },
+                  
               }
             : {};
 
@@ -31,6 +32,20 @@ export const getAllPatients = async (req, res) => {
                 take: limit,
                 orderBy: {
                     createdAt: "desc",
+                },
+                include: {
+                    appointments: {
+                        orderBy: {
+                            createdAt: "desc",
+                        },
+                    
+                    },
+                    visits: {
+                        orderBy: {
+                            createdAt: "desc",
+                        },
+                    
+                    },
                 },
             }),
         ]);
