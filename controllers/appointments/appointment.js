@@ -144,6 +144,14 @@ export const getTodayAppointments = async (req, res) => {
                     lt: endOfDay,
                 },
             },
+            include: { 
+                patient: {
+                    select: {
+                        name: true,
+                        phone: true
+                    }
+                }
+            },
             orderBy: { time: "asc" },
         });
         res.json({ appointments, total: appointments.length });

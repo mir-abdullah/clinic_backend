@@ -168,8 +168,11 @@ export const updatePatient= async(req,res)=>{
 export const deletePatient= async(req,res)=>{
     try{
         const {id} = req.params;
-        await prisma.patient.delete({
-            where: { id }
+        await prisma.patient.update({
+            where: { id },
+            data:{
+                isActive: false
+            }
         });
         res.json({message:"Patient deleted successfully"});
     }
