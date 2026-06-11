@@ -16,7 +16,7 @@ router.get("/:id",getPatientById)
 router.put("/:id",updatePatient)
 
 //delete a patient
-router.delete("/:id",deletePatient)
+router.patch("/:id",deletePatient)
 
 //total patients count 
 router.get("/total/count",totalPatientsCount)

@@ -1,72 +1,83 @@
 import prisma from "../../db.js";
 
-
 // Get all patients
 export const getAllPatients = async (req, res) => {
-    try {
-        const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-        const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
-        
+  try {
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
 
-        const search = String(req.query.search ?? "")
-            .trim()
-            .replace(/^['"]+|['"]+$/g, "");
+    const search = String(req.query.search ?? "")
+      .trim()
+      .replace(/^['"]+|['"]+$/g, "");
 
-        const skip = (page - 1) * limit;
+    const skip = (page - 1) * limit;
 
-        // Base where condition
-        const where = search
-            ? {
-                  name: {
-                      contains: search,
-                  },
-                  
-              }
-            : {};
+    const where = {
+      isActive: true,
+      ...(search && {
+        name: {
+          contains: search,
+        },
+      }),
+    };
 
-        const [totalPatients, patients] = await Promise.all([
-            prisma.patient.count({ where }),
-            prisma.patient.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: {
-                    createdAt: "desc",
-                },
-                include: {
-                    appointments: {
-                        orderBy: {
-                            createdAt: "desc",
-                        },
-                    
-                    },
-                    visits: {
-                        orderBy: {
-                            createdAt: "desc",
-                        },
-                    
-                    },
-                },
-            }),
-        ]);
-
-        return res.status(200).json({
-            patients,
-            pagination: {
-                totalPatients,
-                page,
-                limit,
-                totalPages: Math.ceil(totalPatients / limit),
+    const patients = await prisma.patient.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        visits: {
+          take: 1,
+          orderBy: {
+            createdAt: "desc",
+          },
+          select:{
+            date:true
+          }
+        },
+        appointments: {
+          where: {
+            date: {
+              gte: new Date(),
             },
-        });
-    } catch (error) {
-        console.error(error);
+          },
+          take: 1,
+          orderBy: {
+            date: "asc",
+          },
+          select:{
+            date:true
+          }
+        },
+        _count: {
+          select: {
+            visits: true,
+            appointments: true,
+          },
+        },
+      },
+    });
 
-        return res.status(500).json({
-            message: "Failed to fetch patients",
-            error: error.message,
-        });
-    }
+    return res.status(200).json({
+      patients,
+      pagination: {
+        patients,
+        page,
+        limit,
+        totalPages: Math.ceil(patients / limit),
+      },
+    });
+  } catch (error) {
+    console.error(error);
+
+    return res.status(500).json({
+      message: "Failed to fetch patients",
+      error: error.message,
+    });
+  }
 };
 
 //add a patient
@@ -80,10 +91,8 @@ export const addPatient = async (req, res) => {
       address,
       guardian,
       occupation,
-      medicalHistory
+      medicalHistory,
     } = req.body;
-
-
 
     // =======================
     // VALIDATION
@@ -91,7 +100,7 @@ export const addPatient = async (req, res) => {
 
     if (!name || !phone || !gender) {
       return res.status(400).json({
-        error: "Name, phone and gender are required"
+        error: "Name, phone and gender are required",
       });
     }
 
@@ -108,119 +117,131 @@ export const addPatient = async (req, res) => {
         address: address?.trim(),
         guardian: guardian?.trim(),
         occupation: occupation?.trim(),
-        medicalHistory: medicalHistory?.trim()
-      }
+        medicalHistory: medicalHistory?.trim(),
+      },
     });
 
     return res.status(201).json(patient);
-
   } catch (error) {
     console.error("Add Patient Error:", error);
 
     return res.status(500).json({
-      error: "Failed to create patient"
+      error: "Failed to create patient",
     });
   }
 };
 
-
 //get a patient by id
-export const getPatientById= async(req,res)=>{
-    try {
-        const {id} = req.params;
-        const patient = await prisma.patient.findUnique({
-            where: { id }
-        });
-        if(!patient){
-            return res.status(404).json({error:"Patient not found"});
-        }
-        res.json(patient);
-    }catch(error){
-        res.status(500).json({ error: error.message });
+export const getPatientById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const patient = await prisma.patient.findUnique({
+      where: { id },
+    });
+    if (!patient) {
+      return res.status(404).json({ error: "Patient not found" });
     }
-}
+    res.json(patient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //update a patient
-export const updatePatient= async(req,res)=>{
-    try{
-        const {id} = req.params;
-        const {name,age,gender,phone,address,guardian,occupation,medicalHistory}= req.body;
-        const patient = await prisma.patient.update({
-            where: { id },
-            data: {
-                name,
-                age,
-                gender,
-                phone,
-                address,
-                guardian,
-                occupation,
-                medicalHistory
-            }
-        });
-        res.json(patient);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}
+export const updatePatient = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      name,
+      age,
+      gender,
+      phone,
+      address,
+      guardian,
+      occupation,
+      medicalHistory,
+    } = req.body;
+    const patient = await prisma.patient.update({
+      where: { id },
+      data: {
+        name,
+        age,
+        gender,
+        phone,
+        address,
+        guardian,
+        occupation,
+        medicalHistory,
+      },
+    });
+    res.json(patient);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //delete a patient
-export const deletePatient= async(req,res)=>{
-    try{
-        const {id} = req.params;
-        await prisma.patient.update({
-            where: { id },
-            data:{
-                isActive: false
-            }
-        });
-        res.json({message:"Patient deleted successfully"});
+export const deletePatient = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const patient = await prisma.patient.findUnique({
+      where: { id },
+    });
+
+    if (!patient) {
+      return res.status(404).json({
+        error: "Patient not found",
+      });
     }
-    catch(error){
-        res.status(500).json({ error: error.message });
-    }
-}
+
+    await prisma.patient.update({
+      where: { id },
+      data: {
+        isActive: false,
+      },
+    });
+
+    return res.status(200).json({
+      message: "Patient deleted successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
 
 //total patients count
-export const totalPatientsCount = async(req,res)=>{
-    try{
-        const count = await prisma.patient.count();
-        res.json({totalPatients: count});
-    }
-    catch(error){
-        res.status(500).json({ error: error.message });
-    }
-}
-
+export const totalPatientsCount = async (req, res) => {
+  try {
+    const count = await prisma.patient.count();
+    res.json({ totalPatients: count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //total patients this month count
-export const totalPatientsThisMonthCount = async(req,res)=>{
-    try{
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0,0,0,0);
+export const totalPatientsThisMonthCount = async (req, res) => {
+  try {
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-        const endOfMonth = new Date(startOfMonth);
-        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+    const endOfMonth = new Date(startOfMonth);
+    endOfMonth.setMonth(endOfMonth.getMonth() + 1);
 
-
-        
-        const count = await prisma.patient.count({
-            where: {
-                createdAt: {
-                    gte: startOfMonth,
-                    lt: endOfMonth
-                }
-            }
-        });
-        res.json({totalPatientsThisMonth: count});
-    }
-    catch(error){
-        res.status(500).json({ error: error.message });
-    }
-}
-
-
-
-
-
+    const count = await prisma.patient.count({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lt: endOfMonth,
+        },
+      },
+    });
+    res.json({ totalPatientsThisMonth: count });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
