@@ -5,9 +5,15 @@ export const getAllVisits = async (req, res) => {
   try {
     const visits = await prisma.visit.findMany({
       orderBy: { createdAt: "desc" },
-      include: {patient: true
+      include: {patient: {
+        select: {name: true,
+        id:true,
+        phone:true
       }
-    });
+        }
+      }
+      }
+    );
     res.json(visits);
   } catch (error) {
     console.error("Error fetching visits:", error);
