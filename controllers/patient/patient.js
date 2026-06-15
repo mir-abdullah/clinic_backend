@@ -64,10 +64,12 @@ export const getAllPatients = async (req, res) => {
     return res.status(200).json({
       patients,
       pagination: {
-        patients,
+        total: patients.length,
         page,
         limit,
-        totalPages: Math.ceil(patients / limit),
+        totalPages: Math.ceil(patients.length / limit),
+          hasNextPage: page < Math.ceil(patients.length / limit),
+        hasPreviousPage: page > 1,
       },
     });
   } catch (error) {

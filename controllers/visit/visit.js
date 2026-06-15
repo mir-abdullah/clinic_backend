@@ -3,28 +3,83 @@ import prisma from "../../db.js";
 //get all visits
 export const getAllVisits = async (req, res) => {
   try {
-    const visits = await prisma.visit.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {patient: {
-        select: {name: true,
-        id:true,
-        phone:true
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
+    const skip = (page - 1) * limit;
+
+    const { search, dateFilter } = req.query;
+
+    // --- Date filter ---
+    let dateWhere = {};
+    if (dateFilter) {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      if (dateFilter === "today") {
+        dateWhere = { date: { gte: startOfToday } };
+      } else if (dateFilter === "yesterday") {
+        const startOfYesterday = new Date(startOfToday);
+        startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+        dateWhere = { date: { gte: startOfYesterday, lt: startOfToday } };
+      } else if (dateFilter === "week") {
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfWeek.getDate() - 7);
+        dateWhere = { date: { gte: startOfWeek } };
+      } else if (dateFilter === "month") {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        dateWhere = { date: { gte: startOfMonth } };
       }
+    }
+
+    // --- Search filter (patient name or phone) ---
+    const searchWhere = search
+      ? {
+          patient: {
+            OR: [
+              { name: { contains: search } },
+              { phone: { contains: search } },
+            ],
+          },
         }
-      }
-      }
-    );
-    res.json(visits);
+      : {};
+
+    const where = { ...dateWhere, ...searchWhere };
+
+    const [visits, total] = await Promise.all([
+      prisma.visit.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          patient: {
+            select: { id: true, name: true, phone: true },
+          },
+        },
+      }),
+      prisma.visit.count({ where }),   // <-- count must use same where
+    ]);
+
+    res.json({
+      visits,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page < Math.ceil(total / limit),
+        hasPreviousPage: page > 1,
+      },
+    });
   } catch (error) {
     console.error("Error fetching visits:", error);
     res.status(500).json({ error: "An error occurred while fetching visits." });
   }
 };
-
 //add a visit
 export const addVisit = async (req, res) => {
   try {
-    const { patientId, doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,dueAmount    } = req.body;
+    const { patientId, doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,dueAmount,paymentMethod  } = req.body;
 
     if (patientId) {
       const patient = await prisma.patient.findUnique({
@@ -45,12 +100,23 @@ export const addVisit = async (req, res) => {
         prescription,
         totalAmount,
         paidAmount,
-        dueAmount
+        dueAmount,
       };
 
       const visit = await prisma.visit.create({
         data: newVisit,
       });
+
+      if(paidAmount > 0){
+        await prisma.payment.create({
+          data: {
+            visitId: visit.id,
+            amount: paidAmount,
+            method: paymentMethod || "CASH",
+
+          },
+        });
+      }
       return res.status(201).json(visit);
     } else {
       return res.status(400).json({ error: "Patient ID is required." });
