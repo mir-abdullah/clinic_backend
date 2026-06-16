@@ -31,6 +31,8 @@ export const getAllVisits = async (req, res) => {
       }
     }
 
+    
+
     // --- Search filter (patient name or phone) ---
     const searchWhere = search
       ? {
@@ -280,6 +282,29 @@ export const getMonthlyRevenueStats = async (req, res) => {
     }
 
   }
+
+  //get today visits count
+  export const getTodayVisitsCount = async (req, res) => {
+    try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const count = await prisma.visit.count({
+            where: {
+                date: {
+                    gte: today,
+                    lt: tomorrow,
+                },
+            },
+        });
+
+        res.json({ count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
 
 
     

@@ -4,13 +4,16 @@ import prisma from "../../db.js";
 export const getAllPatients = async (req, res) => {
   try {
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
-    const limit = Math.max(parseInt(req.query.limit, 10) || 20, 1);
+    const limit = Math.max(parseInt(req.query.limit, 10) || 10, 1);
 
     const search = String(req.query.search ?? "")
       .trim()
       .replace(/^['"]+|['"]+$/g, "");
 
     const skip = (page - 1) * limit;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     const where = {
       isActive: true,
@@ -21,59 +24,66 @@ export const getAllPatients = async (req, res) => {
       }),
     };
 
-    const patients = await prisma.patient.findMany({
-      where,
-      skip,
-      take: limit,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        visits: {
-          take: 1,
-          orderBy: {
-            createdAt: "desc",
-          },
-          select:{
-            date:true
-          }
+    const [patients, total] = await Promise.all([
+      prisma.patient.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          createdAt: "desc",
         },
-        appointments: {
-          where: {
-            date: {
-              gte: new Date(),
+        include: {
+          visits: {
+            take: 1,
+            orderBy: {
+              date: "desc",
+            },
+            select: {
+              date: true,
             },
           },
-          take: 1,
-          orderBy: {
-            date: "asc",
+          appointments: {
+            where: {
+              date: {
+                gte: today,
+              },
+            },
+            take: 1,
+            orderBy: {
+              date: "asc",
+            },
+            select: {
+              date: true,
+            },
           },
-          select:{
-            date:true
-          }
-        },
-        _count: {
-          select: {
-            visits: true,
-            appointments: true,
+          _count: {
+            select: {
+              visits: true,
+              appointments: true,
+            },
           },
         },
-      },
-    });
+      }),
+      prisma.patient.count({
+        where,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
 
     return res.status(200).json({
       patients,
       pagination: {
-        total: patients.length,
+        total,
         page,
         limit,
-        totalPages: Math.ceil(patients.length / limit),
-          hasNextPage: page < Math.ceil(patients.length / limit),
+        totalPages,
+        hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
       },
     });
   } catch (error) {
-    console.error(error);
+    console.error("Error fetching patients:", error);
 
     return res.status(500).json({
       message: "Failed to fetch patients",
