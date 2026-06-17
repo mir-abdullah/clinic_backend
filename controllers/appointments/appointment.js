@@ -169,13 +169,11 @@ export const getAppointmentsByPatientId = async(req,res)=>{
             where: {
                 patientId: patientId
              },
-             orderBy: { date: "desc"},
-             include: {
-                patient: true
-             }
+             orderBy: { createdAt: "desc"},
+             
          });
     
-        res.json({appointments, total: appointments.length});
+        res.json({appointments});
     }
     catch(error){
         console.error("Error fetching appointments for patient:", error);
