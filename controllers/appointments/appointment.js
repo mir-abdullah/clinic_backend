@@ -3,19 +3,78 @@ import prisma from "../../db.js";
 
 //get all appointments
 export const getAllAppointments = async (req, res) => {
-    try {
-        const appointments = await prisma.appointment.findMany({
-            orderBy: { createdAt: "desc" },
-            include: {patient: true
-            }
+  try {
+    const { date, status, search, page, pageSize } = req.query;
 
-        });
-        res.json(appointments);
-    } catch (error) {
-        console.error("Error fetching appointments:", error);
-        res.status(500).json({ error: "An error occurred while fetching appointments." });
+    // ── Date filter (day range) ──────────────────────────────────────────
+    let dateFilter = {};
+    if (date) {
+      const start = new Date(date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(date);
+      end.setHours(23, 59, 59, 999);
+      dateFilter = { date: { gte: start, lte: end } };
     }
-}
+
+    // ── Status filter (comma-separated e.g. "SCHEDULED,CHECKED_IN") ─────
+    const statusFilter =
+      status
+        ? { status: { in: status.split(",").filter(Boolean) } }
+        : {};
+
+    // ── Search filter (patient name or phone) ────────────────────────────
+    const searchFilter =
+      search
+        ? {
+            patient: {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { phone: { contains: search } },
+              ],
+            },
+          }
+        : {};
+
+    const where = { ...dateFilter, ...statusFilter, ...searchFilter };
+
+    // ── Paginated (list view) vs unpaginated (day/week view) ─────────────
+    if (page && pageSize) {
+      const take = parseInt(pageSize);
+      const skip = (parseInt(page) - 1) * take;
+
+      const [appointments, total] = await Promise.all([
+        prisma.appointment.findMany({
+          where,
+          include: { patient: true },
+          orderBy: [{ date: "desc" }, { time: "asc" }],
+          skip,
+          take,
+        }),
+        prisma.appointment.count({ where }),
+      ]);
+
+      return res.json({
+        appointments,
+        total,
+        totalPages: Math.ceil(total / take),
+        page: parseInt(page),
+      });
+    }
+
+    // ── No pagination — day/week view ────────────────────────────────────
+    const appointments = await prisma.appointment.findMany({
+      where,
+      include: { patient: true },
+      orderBy: { time: "asc" },
+    });
+
+    res.json(appointments);
+
+  } catch (error) {
+    console.error("Error fetching appointments:", error);
+    res.status(500).json({ error: "An error occurred while fetching appointments." });
+  }
+};
 
 //add an appointment
 export const addAppointment = async (req, res) => {
