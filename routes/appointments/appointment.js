@@ -22,7 +22,7 @@ router.get("/:id",getAppointmentById)
 router.put("/:id",updateAppointment)
 
 //delete an appointment
-router.delete("/:id",deleteAppointment)
+router.patch("/:id/status",deleteAppointment)
 
 
 // ///get appointments for this week

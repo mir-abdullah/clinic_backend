@@ -179,13 +179,14 @@ export const updateAppointment = async (req, res) => {
 export const deleteAppointment = async (req, res) => {
     try {
         const { id } = req.params;
-        await prisma.appointment.delete({
+        await prisma.appointment.update({
             where: { id: id },
+            data: { status: "CANCELLED" }
         });
-        res.json({ message: "Appointment deleted successfully." });
+        res.json({ message: "Appointment cancelled successfully." });
     } catch (error) {
-        console.error("Error deleting appointment:", error);
-        res.status(500).json({ error: "An error occurred while deleting the appointment." });
+        console.error("Error cancelling appointment:", error);
+        res.status(500).json({ error: "An error occurred while cancelling the appointment." });
     }
 }
 
