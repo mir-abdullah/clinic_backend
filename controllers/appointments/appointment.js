@@ -17,10 +17,10 @@ export const getAllAppointments = async (req, res) => {
     }
 
     // ── Status filter (comma-separated e.g. "SCHEDULED,CHECKED_IN") ─────
-    // const statusFilter =
-    //   status
-    //     ? { status: { in: status.split(",").filter(Boolean) } }
-    //     : {};
+    const statusFilter =
+      status
+        ? { status: { in: status.split(",").filter(Boolean) } }
+        : {};
 
     // ── Search filter (patient name or phone) ────────────────────────────
     const searchFilter =
@@ -35,7 +35,7 @@ export const getAllAppointments = async (req, res) => {
           }
         : {};
 
-    const where = { ...dateFilter, ...searchFilter };
+    const where = { ...dateFilter, ...searchFilter, ...statusFilter };
 
     // ── Paginated (list view) vs unpaginated (day/week view) ─────────────
     if (page && pageSize) {

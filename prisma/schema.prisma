@@ -69,8 +69,8 @@ model Appointment {
 
 enum AppointmentStatus {
   SCHEDULED
-  COMPLETED
-  CANCELLED
+  CHECKED_IN
+  CANCELLED 
   NO_SHOW
 }
 
