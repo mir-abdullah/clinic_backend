@@ -94,7 +94,6 @@ export const updatePayment = async (req, res) => {
       data: {
         amount,
         method,
-        date: new Date(date),
         notes
       },
     });
@@ -168,3 +167,5 @@ export const getPaymentDuesByPatientId = async (req, res) => {
     res.status(500).json({ error: "An error occurred while fetching payment dues." });
   }
 }
+
+//monthly stats

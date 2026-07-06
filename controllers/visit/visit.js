@@ -57,9 +57,16 @@ export const getAllVisits = async (req, res) => {
           patient: {
             select: { id: true, name: true, phone: true },
           },
+          payments: {
+            select: { id: true, amount: true, },
+          }
         },
       }),
-      prisma.visit.count({ where }),   // <-- count must use same where
+      prisma.visit.count({ where
+
+       }
+       
+      ),   // <-- count must use same where
     ]);
 
     res.json({
@@ -255,7 +262,12 @@ export const getRecentVisits = async (req, res) => {
             orderBy: { createdAt: "desc" },
             take: 5,
             include: {
-                patient: true
+                patient: {
+                    select: { id: true, name: true, phone: true },
+                },
+                payments: {
+                    select: { id: true, amount: true, },
+                } 
             }
     });
 
@@ -279,6 +291,10 @@ export const getMonthlyRevenueStats = async (req, res) => {
                     gte: new Date(currentYear, currentMonth - 1, 1),
                     lt: new Date(currentYear, currentMonth, 1),
                 },
+
+            },
+            include: {
+                payments: true,
             },
         });
         const totalRevenue = visits.reduce((sum, visit) => sum + visit.totalAmount, 0);
