@@ -45,7 +45,13 @@ export const getAllAppointments = async (req, res) => {
       const [appointments, total] = await Promise.all([
         prisma.appointment.findMany({
           where,
-          include: { patient: true },
+          include: { patient: {
+            select: {
+              id: true,
+              name: true,
+              phone: true
+            }
+          } },
           orderBy: [{ date: "desc" }, { time: "asc" }],
           skip,
           take,
@@ -64,7 +70,13 @@ export const getAllAppointments = async (req, res) => {
     // ── No pagination — day/week view ────────────────────────────────────
     const appointments = await prisma.appointment.findMany({
       where,
-      include: { patient: true },
+      include: { patient: {
+        select: {
+          id: true,
+          name: true,
+          phone: true
+        }
+      } },  
       orderBy: { time: "asc" },
     });
 

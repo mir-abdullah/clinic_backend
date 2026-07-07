@@ -201,32 +201,67 @@ export const deleteVisit = async (req, res) => {
 
 //get visit monthly stats
 export const getVisitStats = async (req, res) => {
-    try {
-        const currentDate = new Date();
-        const currentMonth = currentDate.getMonth() + 1; // Months are zero-based
-        const currentYear = currentDate.getFullYear();
-        // i want visits this month ,total revenue , revenue collected and due amount
-        const visits = await prisma.visit.findMany({
-            where: {
-                date: {
-                    gte: new Date(currentYear, currentMonth - 1, 1),
-                    lt: new Date(currentYear, currentMonth, 1),
-                },
+  try {
+    const now = new Date();
+
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const [
+      totalVisits,
+      revenueResult,
+      paymentResult,
+    ] = await Promise.all([
+      prisma.visit.count({
+        where: {
+          date: {
+            gte: startOfMonth,
+            lt: startOfNextMonth,
+          },
+        },
+      }),
+
+      prisma.visit.aggregate({
+        where: {
+          date: {
+            gte: startOfMonth,
+            lt: startOfNextMonth,
+          },
+        },
+        _sum: {
+          totalAmount: true,
+        },
+      }),
+
+      prisma.payment.aggregate({
+        where: {
+          visit: {
+            date: {
+              gte: startOfMonth,
+              lt: startOfNextMonth,
             },
-        });
-        const totalRevenue = visits.reduce((sum, visit) => sum + visit.totalAmount, 0);
-        const revenueCollected = visits.reduce((sum, visit) => sum + visit.paidAmount, 0);
-        const dueAmount = visits.reduce((sum, visit) => sum + visit.dueAmount, 0);
-        res.json({
-            totalVisits: visits.length,
-            totalRevenue,
-            revenueCollected,
-            dueAmount
-        });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-}
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+    ]);
+
+    const totalRevenue = revenueResult._sum.totalAmount || 0;
+    const revenueCollected = paymentResult._sum.amount || 0;
+    const dueAmount = totalRevenue - revenueCollected;
+
+    res.json({
+      totalVisits,
+      totalRevenue,
+      revenueCollected,
+      dueAmount,
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 //get visits by patient id
 export const getVisitsByPatientId = async (req, res) => {
@@ -291,10 +326,13 @@ export const getMonthlyRevenueStats = async (req, res) => {
                     gte: new Date(currentYear, currentMonth - 1, 1),
                     lt: new Date(currentYear, currentMonth, 1),
                 },
+                
 
             },
             include: {
-                payments: true,
+                payments: {
+                    select: { amount: true }
+                },
             },
         });
         const totalRevenue = visits.reduce((sum, visit) => sum + visit.totalAmount, 0);
