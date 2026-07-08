@@ -5,6 +5,7 @@ import patientRoutes from "./routes/patient/patient.js";
 import appointmentRoutes from "./routes/appointments/appointment.js"
 import visitRoutes from "./routes/visits/visit.js"
 import paymentRoutes from "./routes/payment/payment.js"
+import reportsRoutes from "./routes/reports/reports.js"
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use("/api/patients",patientRoutes);
 app.use("/api/appointments",appointmentRoutes);
 app.use("/api/visits",visitRoutes);
 app.use("/api/payments",paymentRoutes);
+app.use("/api/reports",reportsRoutes);
 
 app.get("/",(req,res)=>{
     res.send("Hello World");
