@@ -88,7 +88,7 @@ export const getAllVisits = async (req, res) => {
 //add a visit
 export const addVisit = async (req, res) => {
   try {
-    const { patientId, doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,dueAmount,paymentMethod  } = req.body;
+    const { patientId, doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,paymentMethod  } = req.body;
 
     if (patientId) {
       const patient = await prisma.patient.findUnique({
@@ -108,8 +108,6 @@ export const addVisit = async (req, res) => {
         diagnosis,
         prescription,
         totalAmount,
-        paidAmount,
-        dueAmount,
       };
 
       const visit = await prisma.visit.create({
@@ -160,7 +158,7 @@ export const getVisitById = async (req, res) => {
 export const updateVisit = async (req, res) => {
   try {
     const { id } = req.params;
-    const { doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount,paidAmount,dueAmount   } = req.body;
+    const { doctorName, date, time, reason, diagnosis,prescription,notes ,totalAmount   } = req.body;
     const visit = await prisma.visit.update({
       where: {
         id: id,
@@ -174,8 +172,6 @@ export const updateVisit = async (req, res) => {
         prescription,
         notes,
         totalAmount,
-        paidAmount,
-        dueAmount
       },
     });
     res.json(visit);
