@@ -126,7 +126,7 @@ export const getMonthlyPaymentsReport = async (req, res) => {
     // Adjust field names below to match your actual Prisma schema.
     const payments = await prisma.payment.findMany({
       where: {
-        date: { gte: start, lte: end },
+        createdAt: { gte: start, lte: end },
       },
       include: {
         visit: {
@@ -137,7 +137,7 @@ export const getMonthlyPaymentsReport = async (req, res) => {
           },
         },
       },
-      orderBy: { date: "asc" },
+      orderBy: { createdAt: "asc" },
     });
  
     const workbook = new ExcelJS.Workbook();
